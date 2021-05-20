@@ -1,10 +1,20 @@
-import React from "react";
-import { Movie } from "./movies.service";
+import React from 'react';
+import { Movie } from '../models';
 
 export const MoviesContext = React.createContext<{
   movies: Movie[];
-  updateMovies: Function;
+  error?: string;
+  plexValid: boolean;
+  plexMachineId?: string;
+  setMovies: (movies: Movie[]) => void;
+  setError: (error: string) => void;
+  setPlexValid: (valid: boolean) => void;
 }>({
   movies: [],
-  updateMovies: Function,
+  error: undefined,
+  plexValid: false,
+  plexMachineId: undefined,
+  setMovies: (movies) => {},
+  setError: (error) => {},
+  setPlexValid: (valid) => {},
 });
