@@ -28,6 +28,7 @@ RUN	apk update && \
   touch /var/run/nginx/nginx.pid
 
 COPY ./build /usr/share/nginx/html
+COPY ./.env /usr/share/nginx/html/.env
 COPY etc/nginx.conf /etc/nginx/nginx.conf
 COPY etc/common.conf /etc/nginx/common.conf
 COPY etc/conf.d/default.conf /etc/nginx/conf.d/default.conf

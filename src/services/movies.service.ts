@@ -1,5 +1,5 @@
 import { Movie, Torrent } from '../models/yify';
-import { PlexConfig, PlexResponse } from '../models/plex';
+import { MetadataSearchable, PlexConfig, PlexResponse } from '../models/plex';
 import { BtcConfig, BtcMainData } from '../models';
 
 const movieApiBaseUrl = 'https://yts.mx/api/v2/';
@@ -40,7 +40,7 @@ export async function findMovieTorrent(hash?: string, cache: boolean = true) {
 
   const btcData = await getBtcData(cache);
   const match = btcData?.torrents[lowerHash];
-  console.info(btcData, match, lowerHash);
+  // console.info(btcData, match, lowerHash);
   return match;
 }
 
@@ -48,7 +48,7 @@ export async function downloadMovieTorrent(url?: string, hash?: string) {
   if (!url || !hash) return false;
 
   try {
-    if (!!btcConfig.category && !btcConfig.savePath) {
+    if (!btcConfig.savePath) {
       btcConfig.savePath = await resolveBtcCategory(btcConfig.category);
     }
 
@@ -56,10 +56,13 @@ export async function downloadMovieTorrent(url?: string, hash?: string) {
     formData.append('urls', `${url}\n`);
     formData.append('root_folder', 'true');
     formData.append('autoTMM', 'true');
-    if (!!btcConfig.category && !!btcConfig.savePath) {
+    if (!!btcConfig.category) {
       formData.append('category', btcConfig.category);
+    }
+    if (!!btcConfig.savePath) {
       formData.append('savepath', btcConfig.savePath);
     }
+    // console.info(`Using path: '${btcConfig.savePath}'`);
 
     await fetch(`http://${btcConfig.address}:${btcConfig.port}/api/v2/torrents/add`, {
       ...btcOptions,
@@ -78,7 +81,8 @@ export async function downloadMovieTorrent(url?: string, hash?: string) {
 export async function resolveBtcCategory(category?: string) {
   if (!category) return undefined;
   const btcData = await getBtcData();
-  return btcData?.categories?.[category].savepath;
+  // console.info(`Found path: '${btcData?.categories?.[category].savePath}'`);
+  return btcData?.categories?.[category].savePath;
 }
 
 export async function getBtcData(cache: boolean = true): Promise<BtcMainData | undefined> {
@@ -90,7 +94,7 @@ export async function getBtcData(cache: boolean = true): Promise<BtcMainData | u
 
   const json = await response.json();
 
-  console.info(response, json);
+  // console.info(response, json);
   btcDataCache = json as BtcMainData;
   return btcDataCache;
 }
@@ -113,6 +117,7 @@ export async function searchMovies(search?: string): Promise<Movie[]> {
 }
 
 export async function validatePlex(): Promise<boolean> {
+  // console.info(`Validating Plex`, plexConfig);
   const sectionsUrl = `http://${plexConfig.address}:${plexConfig.port}/library/sections`;
   const response = await fetch(sectionsUrl, {
     credentials: 'same-origin',
@@ -157,7 +162,20 @@ export async function findPlexMovie(search: string, year: number) {
   if (!search || search === '') return undefined;
 
   try {
-    const finalSearchUrl = `http://${plexConfig.address}:${plexConfig.port}/library/sections/${plexConfig.sectionId}/all?title=${search}`;
+    const bestMatch = await Promise.all([
+      findPlexMovieWith('title', search, year),
+      findPlexMovieWith('originalTitle', search, year),
+    ]);
+    return bestMatch.filter((v) => !!v).shift();
+  } catch (e) {
+    console.error(e);
+    return undefined;
+  }
+}
+
+async function findPlexMovieWith(fieldName: keyof(MetadataSearchable), search: string, year: number) {
+  try {
+    const finalSearchUrl = `http://${plexConfig.address}:${plexConfig.port}/library/sections/${plexConfig.sectionId}/all?${fieldName}=${search}`;
     const response = await fetch(finalSearchUrl, {
       credentials: 'same-origin',
       method: 'GET',
@@ -169,7 +187,7 @@ export async function findPlexMovie(search: string, year: number) {
 
     const plex = (await response.json()) as PlexResponse;
     const bestMatch = plex?.MediaContainer?.Metadata?.find(
-      (movie) => movie.title.toLowerCase() === search.toLowerCase() && movie.year === year
+      (movie) => movie[fieldName].toLowerCase() === search.toLowerCase() && movie.year === year
     );
     return bestMatch;
   } catch (e) {

@@ -69,7 +69,7 @@ export interface ServerState {
 }
 
 export interface BtcMainData {
-  categories: { [key: string]: { name: string; savepath: string } };
+  categories: { [key: string]: { name: string; savePath: string } };
   full_update: boolean;
   rid: number;
   server_state: ServerState;

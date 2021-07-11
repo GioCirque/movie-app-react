@@ -52,28 +52,32 @@ export interface Role {
   tag: string;
 }
 
-export interface Metadata {
+export interface MetadataSearchable {
   ratingKey: string;
   key: string;
   guid: string;
   studio: string;
   type: string;
   title: string;
+  originalTitle: string;
   contentRating: string;
   summary: string;
-  rating: number;
-  audienceRating: number;
-  year: number;
   tagline: string;
   thumb: string;
   art: string;
-  duration: number;
   originallyAvailableAt: string;
-  addedAt: number;
-  updatedAt: number;
   audienceRatingImage: string;
   primaryExtraKey: string;
   ratingImage: string;
+}
+
+export interface Metadata extends MetadataSearchable {
+  rating: number;
+  audienceRating: number;
+  year: number;
+  duration: number;
+  addedAt: number;
+  updatedAt: number;
   Media: Media[];
   Genre: Genre[];
   Director: Director[];
