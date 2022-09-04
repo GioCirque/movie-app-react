@@ -21,7 +21,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "release": "docker buildx build -t docker.io/giocirque/movieappreact:latest --push --platform=linux/amd64 ."
   },
   "eslintConfig": {
     "extends": "react-app"
